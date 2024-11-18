@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import math as mt
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 Aylık = [0]*12 #Aylık Ücret
