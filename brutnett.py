@@ -443,18 +443,16 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
         devreden2[i+2] = Toplam[i] - tavan[i] 
     
     
-
-
-    sske[i] = round(sskm[i]*0.14,2)
-    sski[i] = round(sskm[i]*0.01,2)
+    sske[i] = min(Toplam_Ms_Dahil[i],round(sskm[i]*0.14,2))
+    sski[i] = min(Toplam_Ms_Dahil[i],round(sskm[i]*0.01,2))
     dv[i] = round(Toplam_Ms_Dahil[i]*0.00759,2)
     vm[i] = round(Toplam_Ms_Dahil[i]-sske[i]-sski[i],2)
     kvm[i+1] = round(kvm[i],2)
-    gv[i] = round(vergi(kvm[i-1], vm[i]),2)
+    gv[i] = max(0,round(vergi(kvm[i-1], vm[i]),2))
 
     igv[i] = min(gv[i],igv[i])
     idv[i] = min(idv[i],dv[i])
-    net[i] = round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]-ms_C[i]-ms_B[i]),2)
+    net[i] = max(0,round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]-ms_C[i]-ms_B[i]),2))
 
     net_msli[i]= round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]-ms_C[i]),2)
     net_mscli[i] = round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]),2)
