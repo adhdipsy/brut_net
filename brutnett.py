@@ -97,8 +97,6 @@ def ms_es_banka(toplam, tavan):
 
         return tavan * 0.2275  
 
- 
-
 def vergi(kum, matrah): # Vergi hesaplama fonksiyonu, Kümulatif matrah ve aylık matrah
 
  
@@ -425,23 +423,27 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
     
     if (Aylık[i] +ikramiye[i] + Tazm_Top[i] + ms_B_brüt[i] + ek_gorev_brut[i]) >= tavan[i]:
         sskm[i]=tavan[i]
-
+    elif Toplam_Ms_Dahil[i]==0:
+        sskm[i]=0
     elif sskm[i] < tavan[i]:
         sskm_bosluk= tavan[i] - sskm[i]
         
         devreden1_kullanılan[i] = min(sskm_bosluk,devreden1[i])
         sskm_bosluk= sskm_bosluk - devreden1_kullanılan[i]
-        devreden1[i+1] = max(0,devreden1[i] - devreden1_kullanılan[i])
+        devreden2[i+1] = devreden2[i+1] - devreden1_kullanılan[i]
 
         devreden2_kullanılan[i] = min(sskm_bosluk,devreden2[i])
         sskm_bosluk = sskm_bosluk - devreden2_kullanılan[i] 
-        devreden2[i+1] = max(0,devreden2[i] - devreden2_kullanılan[i])
+        devreden2[i] = max(0,devreden2[i])
         
         sskm[i] = sskm[i] + devreden1_kullanılan[i] + devreden2_kullanılan[i]
     elif Toplam_Ms_Dahil[i] > tavan[i]:
         sskm[i]=tavan[i] 
         devreden1[i+1] = Toplam[i] - tavan[i] 
         devreden2[i+2] = Toplam[i] - tavan[i] 
+    
+    
+
 
     sske[i] = round(sskm[i]*0.14,2)
     sski[i] = round(sskm[i]*0.01,2)
@@ -466,9 +468,10 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
 dic = {"Toplam Brüt Ücret": Toplam,"Toplam MS'Lİ Brüt Ücret": Toplam_Ms_Dahil,"Emekli Sandığı Payı":sske,"Emekli Sandığı İşsizlik Payı":sski,"Devreden Toplam": dtoplam,"Devreden Kullanılan": ktoplam,"Gelir Vergisi":gv,"Damga Vergisi İstisnası":idv,"Vergi İstisnası": igv, 
        "Munzam Çalışan Payı": ms_C,"Net Tutar": net,"Net Tutar (Ms Calısan)": net_mscli,"Net Tutar MS bankalı": net_msli}
 
-dic_vrb={"Toplam sabit brütler": Toplam_brut,"Ek görev brüt": ek_gorev_brut,"jestiyon brüt":jest_brut,"MS Brüt tutar": ms_B_brüt}
+dic_vrb={"Toplam sabit brütler": Toplam_brut,"Ek görev brüt": ek_gorev_brut,"jestiyon brüt":jest_brut,"MS Brüt tutar": ms_B_brüt,
+         "devreden1 kullanılan":devreden1_kullanılan,"devreden2 kullanılan":devreden2_kullanılan}
 
-dic_13={"Küm GV": kvm}
+dic_13={"Küm GV": kvm,"Devreden1":devreden1,"Devreden2":devreden2}
 
  
 '''
