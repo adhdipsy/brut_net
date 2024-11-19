@@ -428,13 +428,14 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
     elif sskm[i] < tavan[i]:
         sskm_bosluk= tavan[i] - sskm[i]
         
-        devreden1_kullanılan[i] = min(sskm_bosluk,devreden1[i])
-        sskm_bosluk= sskm_bosluk - devreden1_kullanılan[i]
-        devreden2[i+1] = devreden2[i+1] - devreden1_kullanılan[i]
-
         devreden2_kullanılan[i] = min(sskm_bosluk,devreden2[i])
-        sskm_bosluk = sskm_bosluk - devreden2_kullanılan[i] 
+        sskm_bosluk= sskm_bosluk - devreden2_kullanılan[i]
+        
+
+        devreden1_kullanılan[i] = min(sskm_bosluk,devreden1[i])
+        sskm_bosluk = sskm_bosluk - devreden1_kullanılan[i] 
         devreden2[i] = max(0,devreden2[i])
+        devreden2[i+1] = devreden2[i+1] - devreden1_kullanılan[i]
         
         sskm[i] = sskm[i] + devreden1_kullanılan[i] + devreden2_kullanılan[i]
     elif Toplam_Ms_Dahil[i] > tavan[i]:
