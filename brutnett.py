@@ -3,7 +3,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import math as mt
-# import matplotlib.pyplot as plt
 
 
 Aylık = [0]*12 #Aylık Ücret
@@ -37,7 +36,8 @@ kullan1 = [0,0,0,0,0,0,0,0,0,0,0,0] # 1. devreden matrahtan kullanılan
 kullan2 = [0,0,0,0,0,0,0,0,0,0,0,0] # 2. devreden matrahtan kullanılan
 dtoplam = [0,0,0,0,0,0,0,0,0,0,0,0] #devreden toplam
 ktoplam = [0,0,0,0,0,0,0,0,0,0,0,0] # devreden matrah kullanılan
-
+mtrh_bosluk= [0]*12
+dev_1_mtrh_bosluk= [0]*12
 net = [0]*12 # net gelir
 net_ms = [0]*12 
 gv = [0]*12 # gelir vergisi
@@ -95,10 +95,10 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
 
     elif Toplam[i] <= tavan[i]:
         sskm[i] = min(Toplam[i] + devreden1[i] + devreden2[i], tavan[i])
-        kalan = tavan[i]- Toplam[i]
-        kalan1 = max(kalan-devreden1[i],0)
-        kullan1[i] = min(kalan,devreden1[i])
-        kullan2[i] = min(kalan1,devreden2[i])
+        mtrh_bosluk[i] = tavan[i]- Toplam[i] # İlk matrah boşluğu
+        dev_1_mtrh_bosluk[i] = max(mtrh_bosluk[i]-devreden1[i],0) 
+        kullan1[i] = min(mtrh_bosluk[i],devreden1[i])
+        kullan2[i] = min(dev_1_mtrh_bosluk[i],devreden2[i])
         if devreden1[i+1] != 0:
             devreden1[i+1] = devreden1[i+1] - kullan1[i]
         if devreden2[i+1] != 0:
@@ -136,10 +136,10 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
 
     elif ms_B_dahil_toplam_brüt[i] <= tavan[i]:
         sskm_msB_dahil[i] = min(ms_B_dahil_toplam_brüt[i] + devreden1[i] + devreden2[i], tavan[i])
-        kalan = tavan[i]- ms_B_dahil_toplam_brüt[i]
-        kalan1 = max(kalan-devreden1[i],0)
-        kullan1[i] = min(kalan,devreden1[i])
-        kullan2[i] = min(kalan1,devreden2[i])
+        mtrh_bosluk[i] = tavan[i]- ms_B_dahil_toplam_brüt[i]
+        dev_1_mtrh_bosluk[i] = max(mtrh_bosluk[i]-devreden1[i],0)
+        kullan1[i] = min(mtrh_bosluk[i],devreden1[i])
+        kullan2[i] = min(dev_1_mtrh_bosluk[i],devreden2[i])
         if devreden1[i+1] != 0:
             devreden1[i+1] = devreden1[i+1] - kullan1[i]
         if devreden2[i+1] != 0:
@@ -178,12 +178,32 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
 dic = {"Toplam Brüt Ücret": Toplam,"Emekli Sandığı Payı":sske,"Emekli Sandığı İşsizlik Payı":sski,"Devreden Toplam": dtoplam,"Devreden Kullanılan": ktoplam,"Gelir Vergisi":gv,"Damga Vergisi İstisnası":idv,"Vergi İstisnası": igv, "Munzam Çalışan Payı": ms_C,"Net Tutar": net}
 dic_ms = {"Toplam Brüt Ücret": ms_B_dahil_toplam_brüt,"Emekli Sandığı Payı":sske,"Emekli Sandığı İşsizlik Payı":sski,"Devreden Toplam": dtoplam,"Devreden Kullanılan": ktoplam,"Gelir Vergisi":gv_MS_B_Dahil,"Damga Vergisi İstisnası":idv,"Vergi İstisnası": igv, "Munzam Çalışan Payı": ms_C,"Net Tutar": net_ms,"ms b brüt": ms_B_brüt}
 
+row_labels = [
+    "Tavan",
+    "ms'siz brüt toplam",
+    "ms'li brüt",
+    "matrah bosluğu",
+    "devreden1",
+    "devreden2",
+    "1. devreden matrahtan kullanılan",
+    "2. devreden matrahtan kullanılan",
+    "devreden matrahtan kullanılan",
+    "devreden matrah kullanılan",
+]
+
+dic_mt = {aylar[i]: [tavan[i], Toplam[i], ms_B_dahil_toplam_brüt[i], mtrh_bosluk[i], devreden1[i], devreden2[i], kullan1[i], kullan2[i], dtoplam[i], ktoplam[i]] for i in range(12)}
+
+
+
 #sonuç tablosu
 tablo = pd.DataFrame(dic, index=["Ocak","Şubat", "Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos",
                                  "Eylül","Ekim","Kasım","Aralık"])
 
 tablo_ms = pd.DataFrame(dic_ms, index=["Ocak","Şubat", "Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos",
                                  "Eylül","Ekim","Kasım","Aralık"])
+
+tablo_mt = pd.DataFrame(dic_mt, index=row_labels)
+
 
 
 ortalamat = tablo.mean() #ortalama ödenen satırı
@@ -201,64 +221,10 @@ tablo_ms.loc["Ortalama"]= ortalamat_ms
 
 tablo = tablo.applymap("{0:,.2f}₺".format) # format
 tablo_ms = tablo_ms.applymap("{0:,.2f}₺".format) # format
+tablo_mt = tablo_mt.applymap("{0:,.2f}₺".format) # format
 
-st.table(tablo) #streamlit tablo gösterimi
+#streamlit tablo gösterimi
+st.table(tablo) 
 st.table(tablo_ms)
 
-'''
-#-------------- PİE CHART ------------------------
-
-# Hesaplamaların yapılması (kesintiler, net ücret gibi)
-kesintiler = [sske[i] + sski[i] + gv_MS_B_Dahil[i] + dv[i] + ms_C[i] for i in range(12)]
-net_toplam = sum(net_ms)
-kesinti_toplam = sum(kesintiler)
-toplam = kesinti_toplam + net_toplam  # Toplam brüt ücret
-
-
-# Doughnut chart için veriler
-labels = ["Kesintiler", "Net Ücret"]
-sizes = [kesinti_toplam, net_toplam]
-
-# Renk paleti
-colors = ['#8B008B', '#40E0D0']  # Kesintiler için koyu pembe-mor, net ücret için turkuaz
-
-# Doughnut chart çizimi
-fig, ax = plt.subplots()
-ax.pie(
-    sizes,
-    startangle=140,
-    colors=colors,
-    wedgeprops=dict(width=0.4),  # Ortası boş hale getirmek için
-)
-
-# Ortadaki metni ekleme
-ax.text(0, 0, f"Ücretler\nToplamı:\n{toplam:,.2f}₺", ha='center', va='center', fontsize=12, fontweight='bold')
-
-# Başlık
-ax.set_title("Ücret ve Kesintilerinizin Dağılımı", fontsize=14)
-
-# Arka planı kaldır
-fig.patch.set_facecolor('none')
-
-# Streamlit'te Doughnut chart gösterimi
-st.pyplot(fig)
-
-# Alt metinler: Kesintiler ve Net Ücret
-kesintiler_yuzde = (kesinti_toplam / toplam) * 100
-net_ucret_yuzde = (net_toplam / toplam) * 100
-
-st.markdown(f"""
-<div style="text-align: center;">
-    <span style="color: {colors[0]}; font-weight: bold; font-size: 22px;">
-        Kesintiler: {kesinti_toplam:,.2f}₺ (%{kesintiler_yuzde:.1f})
-    </span>
-    <br>
-    <span style="color: {colors[1]}; font-weight: bold; font-size: 22px;">
-        Net Ücret: {net_toplam:,.2f}₺ (%{net_ucret_yuzde:.1f})
-    </span>
-</div>
-""", unsafe_allow_html=True)
-'''
-
-
-
+st.table(tablo_mt)
