@@ -76,6 +76,12 @@ mtrh_bosluk= [0]*12
 
 dev_1_mtrh_bosluk= [0]*12
 
+matrah_artigi_1=[0]*12
+matrah_artigi_2=[0]*12
+
+
+
+
 net = [0]*12 # net gelir
 net_msli = [0] * 12 
 net_mscli = [0] * 12
@@ -317,9 +323,10 @@ def brut_vergi_sgk(kum,net):
 
     return vergi_brutu
 
-def netten_brute(i,gv_matrah,es_matrah,net):
-
-    net = max(0,net-(idv[i]+igv[i]))
+def netten_brute(i,gv_matrah,es_matrah,net, indirim = None):
+    
+    if indirim == 1:
+      net = max(0,net-(idv[i]+igv[i]))
 
     damga = 0.00759
 
@@ -366,25 +373,22 @@ def netten_brute(i,gv_matrah,es_matrah,net):
 aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 
  
+st.sidebar.header("Kullanıcı Girdileri")
 
 for i, ay in enumerate(aylar):
-
-    with st.expander(f"{ay}"):
-
- 
-
-        # Kullanıcı girişleri
-
+  
+    # Kullanıcı girişleri
+    with st.sidebar.expander(f"{ay}"):
         Aylık[i] = st.number_input(f"{ay} Ayı Aylık Ücret (Brüt TL)", step=1000, value=33000 if i == 0 else Aylık[i - 1], key=f"Aylik_{i}")
 
         ikramiye[i] = mt.ceil(Aylık[i] / 3)
         ms_C[i] = round((Aylık[i] + mt.ceil(Aylık[i]/3))*0.07,2)
         ms_B[i] = round((Aylık[i] + mt.ceil(Aylık[i]/3))*0.15,2)
-        st.write(f"{ay} Ayı İkramiye Tutarınız (Brüt TL): {ikramiye[i]}₺")
+        st.write(f"İkramiye Tutarı: {format(ikramiye[i], ',').replace(',', '.')} TL")
 
         Tazm_Top[i] = st.number_input(f"{ay} Ayı Tazminat Toplamınız (Brüt TL)", step=1000, value=Tazm_Top[i - 1] if i > 0 else 0, key=f"Tazm_Top_{i}")
 
-        ilave[i] = st.number_input(f"{ay} Ayı Prim/Temettü Toplamınız (Brüt TL)", step=1000, value=0 )
+        ilave[i] = st.number_input(f"{ay} Ayı Prim/Temettü Toplamınız (Brüt TL)", step=1000, value=0)
 
         ek_gorev[i] = st.number_input(f"{ay} Ek Görev Tutarınız (Net TL)", step=1000, value=ek_gorev[i - 1] if i > 0 else 0, key=f"ek_gorev_{i}")
 
@@ -392,34 +396,66 @@ for i, ay in enumerate(aylar):
 
  
 
-def ucret_sonrasi_yeni_sgkm_ve_kum_gv(sgk_onceki_matrah,onceki_gelir_vergi_matrahi,ucret,asgari_tavan): #önceki ay demek değil, hesaplama önceliği
+def ucret_sonrasi_yeni_sgkm_ve_kum_gv(sgk_onceki_matrah,onceki_gelir_vergi_matrahi,ucret,asgari_tavan,devreden_tipi=1): #önceki ay demek değil, hesaplama önceliği
+    #devreden tipi (1,2,3) = 1 çalışan ödediği durum, 2 Banka ödediği durum, 3 devretmeyen durum
     sgk_matrah = min(asgari_tavan,ucret)
+    matrah_artigi= max((sgk_onceki_matrah+ucret) - asgari_tavan,0)
+
     matrah_bosluk= min(ucret, max(0,asgari_tavan - sgk_onceki_matrah))
     yeni_sgk_matrah = sgk_onceki_matrah + matrah_bosluk 
     esis_kesinti = matrah_bosluk * 0.15
 
     gelir_vergi_matrahi = ucret-esis_kesinti
     kum_gelir_vergi_matrahi = gelir_vergi_matrahi + onceki_gelir_vergi_matrahi 
-    return yeni_sgk_matrah,kum_gelir_vergi_matrahi
     
+    if devreden_tipi==1:
+        matrah_artigi_calisan=matrah_artigi
+        matrah_artigi_banka=0
+    elif devreden_tipi==2:
+        matrah_artigi_banka=matrah_artigi
+        matrah_artigi_calisan=0
+    else:
+        matrah_artigi_banka=0
+        matrah_artigi_calisan=0
+        
+    return yeni_sgk_matrah,kum_gelir_vergi_matrahi,matrah_artigi_calisan,matrah_artigi_banka
 
+def matrah_artigi_topla(a,b):
+    a+=a
+    b+=b
+    return a,b
+    
 
 for i in range(12): # i = ilgili ay, 12 ay için döngü
     
     Toplam_brut[i] = Aylık[i] +ikramiye[i] + Tazm_Top[i] + ilave[i] #toplam brüt ücretler
-    sskm[i], kvm[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],Toplam_brut[i],tavan[i]) # Brüt ücretler sonrası matrahlar
-
-    ek_gorev_brut[i]= netten_brute(i,kvm[i],sskm[i],ek_gorev[i])
+    sskm[i], kvm[i], matrah_artigi_a,matrah_artigi_b = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],Toplam_brut[i],tavan[i]) # Brüt ücretler sonrası matrahlar
+    matrah_artigi_1[i],matrah_artigi_2[i] = matrah_artigi_topla(matrah_artigi_a,matrah_artigi_b)
+    
+    ind = None
+    if Toplam_brut[i] ==0:
+     ind = 1
+ 
+    ek_gorev_brut[i]= netten_brute(i,kvm[i],sskm[i],ek_gorev[i], indirim = ind)
     Toplam_Brut_Ekgorev[i]= Toplam_brut[i] +  ek_gorev_brut[i] # topmlam brütlere ek görev'in brütünü ekleme
-    sskm[i], kvm[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],ek_gorev_brut[i],tavan[i]) #Ek görev sonrası matrahlar
+    sskm[i], kvm[i], matrah_artigi_1[i],matrah_artigi_2[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],ek_gorev_brut[i],tavan[i],2) #Ek görev sonrası matrahlar
+    matrah_artigi_1[i],matrah_artigi_2[i] = matrah_artigi_topla(matrah_artigi_a,matrah_artigi_b)
 
-    jest_brut[i]=netten_brute(i,kvm[i],sskm[i],jest[i])
-    Toplam[i] = Toplam_Brut_Ekgorev[i] + jest_brut[i] # jest brüt tutarını ek görevli brütlere ekleme
-    sskm[i], kvm[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],jest_brut[i],tavan[i]) #Jestiyon sonrası matrahlar
-
+    if ind == 1 and ek_gorev_brut[i]>0:
+     ind = None
+    
+    jest_brut[i]=netten_brute(i,kvm[i],sskm[i],jest[i], indirim = ind)
+    Toplam[i] = round(Toplam_Brut_Ekgorev[i] + jest_brut[i],2) # jest brüt tutarını ek görevli brütlere ekleme
+    sskm[i], kvm[i], matrah_artigi_1[i],matrah_artigi_2[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],jest_brut[i],tavan[i],2) #Jestiyon sonrası matrahlar
+    matrah_artigi_1[i],matrah_artigi_2[i] = matrah_artigi_topla(matrah_artigi_a,matrah_artigi_b)
+    
     ms_B_brüt[i]= netten_brute(i,kvm[i],sskm[i],ms_B[i])
-    Toplam_Ms_Dahil[i]= Toplam[i] + ms_B_brüt[i]  # toplam tutarlara ms banka brüt ekleme
-    sskm[i], kvm[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],ms_B_brüt[i],tavan[i]) #Munzam sandık brüt sonrası matrahlar 
+    Toplam_Ms_Dahil[i]= round(Toplam[i] + ms_B_brüt[i],2)  # toplam tutarlara ms banka brüt ekleme
+    sskm[i], kvm[i], matrah_artigi_1[i],matrah_artigi_2[i] = ucret_sonrasi_yeni_sgkm_ve_kum_gv(sskm[i],kvm[i],ms_B_brüt[i],tavan[i],3) #Munzam sandık brüt sonrası matrahlar 
+    matrah_artigi_1[i],matrah_artigi_2[i] = matrah_artigi_topla(matrah_artigi_a,matrah_artigi_b)
+
+
+    # -- Devreden hesaplama ---- 
     
     if (Aylık[i] +ikramiye[i] + Tazm_Top[i] + ms_B_brüt[i] + ek_gorev_brut[i]) >= tavan[i]:
         sskm[i]=tavan[i]
@@ -436,7 +472,7 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
         sskm_bosluk = sskm_bosluk - devreden1_kullanılan[i] 
         devreden2[i] = max(0,devreden2[i])
         devreden2[i+1] = devreden2[i+1] - devreden1_kullanılan[i]
-        
+
         sskm[i] = sskm[i] + devreden1_kullanılan[i] + devreden2_kullanılan[i]
     elif Toplam_Ms_Dahil[i] > tavan[i]:
         sskm[i]=tavan[i] 
@@ -459,40 +495,55 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
     net_mscli[i] = round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]),2)
     ktoplam[i] = devreden1_kullanılan[i] + devreden2_kullanılan[i]
     dtoplam[i] = devreden1[i] + devreden2[i]
- 
+
+# ---- Ay Tabloları Gösterim --- --------------------------------------------------
+
+
+# Renk teması ayarları
+background_colors = ["#fce4ec", "#e3f2fd", "#f8bbd0"]  # Pembe-mavi tonları
+text_color = "black"
+
+# Açılır kapanır grup kutusu
+with st.expander("Aylık Ücretler Detayları", expanded=True):
+    cols = st.columns(4)  # Her satırda 4 sütun
+    for i, ay in enumerate(aylar):
+        col = cols[i % 4]  # 4 sütun içinde sırasıyla yerleşim
+        with col:
+            # Her ay için kutucuk
+            st.markdown(
+                f"""
+                <div style="
+                    border: 1px solid #d1c4e9;
+                    border-radius: 8px;
+                    padding: 16px;
+                    background-color: {background_colors[i % len(background_colors)]};
+                    text-align: left;
+                    margin: 8px;
+                ">
+                    <h3 style="text-align: center; color: {text_color};">{ay}</h3>
+                    <p><strong>Toplam Ücret</strong> (Brüt TL)</p>
+                    <p>{format(Toplam[i], ',').replace(',', '.')} TL</p>
+                    <p><strong>Yaklaşık Net Ücret</strong></p>
+                    <p>{format(net_mscli[i], ',').replace(',', '.')} TL</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        # Yeni satıra geçmek için sütunları sıfırla
+        if (i + 1) % 4 == 0:
+            cols = st.columns(4)  # Yeni satır için sütunlar
+#------------------------------------------------------------------------------------------
 
 #sonuç sözlüğü toparlama tablosu
-
 
 dic = {"Toplam Brüt Ücret": Toplam,"Toplam MS'Lİ Brüt Ücret": Toplam_Ms_Dahil,"Emekli Sandığı Payı":sske,"Emekli Sandığı İşsizlik Payı":sski,"Devreden Toplam": dtoplam,"Devreden Kullanılan": ktoplam,"Gelir Vergisi":gv,"Damga Vergisi İstisnası":idv,"Vergi İstisnası": igv, 
        "Munzam Çalışan Payı": ms_C,"Net Tutar": net,"Net Tutar (Ms Calısan)": net_mscli,"Net Tutar MS bankalı": net_msli}
 
-dic_vrb={"Toplam sabit brütler": Toplam_brut,"Ek görev brüt": ek_gorev_brut,"jestiyon brüt":jest_brut,"MS Brüt tutar": ms_B_brüt,
+dic_vrb={"Toplam sabit brütler": Toplam_brut,"Ek görev brüt": ek_gorev_brut,"jestiyon brüt":jest_brut,"MS Brüt tutar": ms_B_brüt, "MS Net tutar": ms_B,
          "devreden1 kullanılan":devreden1_kullanılan,"devreden2 kullanılan":devreden2_kullanılan}
 
 dic_13={"Küm GV": kvm,"Devreden1":devreden1,"Devreden2":devreden2}
 
- 
-'''
-row_labels = [
-
-    "Tavan",
-    "ms'siz brüt toplam",
-    "ms'li brüt",
-    "matrah bosluğu",
-    "devreden1",
-    "devreden2",
-    "1. devreden matrahtan kullanılan",
-    "2. devreden matrahtan kullanılan",
-    "devreden matrahtan kullanılan",
-    "devreden matrah kullanılan",
-
-]
-
- 
-
-dic_devr = {aylar[i]: [tavan[i], Toplam[i], Toplam_Ms_Dahil[i], mtrh_bosluk[i], devreden1[i], devreden2[i], devreden1_kullanılan[i], devreden2_kullanılan[i], dtoplam[i], ktoplam[i]] for i in range(12)}
-'''
 
 #sonuç tablosu
 
