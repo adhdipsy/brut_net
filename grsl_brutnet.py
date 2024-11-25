@@ -9,7 +9,8 @@ import math as mt
  
 
 Aylık = [0]*12 #Aylık Ücret
-onceki_aylik=[0]*13 
+onceki_aylik=[0]*13
+onceki_aylik[0] = 33000
 Tazm_Top = [0]*12 # Aylık ücret dışındaki Tazminatlar toplamı
 ilave = [0]*12 #Ay içinde ödenen değişken ücret- brüt
 ikramiye =[0]*12 #İkramiye
@@ -234,14 +235,15 @@ aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağu
  
 st.sidebar.header("Kullanıcı Girdileri")
 with st.sidebar.expander("Aralık Ayı Ücretleriniz ve Zam Uygulaması"):
-    onceki_aylik[0] = st.number_input("Aralık Ayı Aylık Ücretiniz (Brüt TL):", min_value=0.0, step=100.0) # i=0: Aralık Ayı indeksi
-    aralik_tazm=st.number_input("Aralık Ayı Tazminat Toplamınız (Brüt TL):", min_value=0.0, step=100.0) 
+    onceki_aylik[0] = st.number_input("Aralık Ayı Aylık Ücretiniz (Brüt TL):", step=1000,value=0) # i=0: Aralık Ayı indeksi
+    aralik_tazm=st.number_input("Aralık Ayı Tazminat Toplamınız (Brüt TL):", min_value=0, step=1000) 
     zam=st.button("Zam uygula")
     
 if zam==True:
    Aylık[0]= mt.ceil(onceki_aylik[0] * 1.50)
-else:    
-    Aylık[0]= 33000
+
+zam=False   
+
 
 for i, ay in enumerate(aylar):
   
@@ -264,9 +266,12 @@ for i, ay in enumerate(aylar):
 # MS Yükselme payları hesaplama
 
 def sandik_isleri(i,aylik_once,aylik):
-    if aylik_once < aylik:
-        ms_C[i] = round((aylik + aylik)*0.07,2) 
-        ms_B[i] = round((aylik + aylik)*0.15,2)
+    if aylik_once==0:
+        ms_C[i] = round((aylik + mt.ceil(aylik/3))*0.07,2) 
+        ms_B[i] = round((aylik + mt.ceil(aylik/3))*0.15,2)
+    elif aylik <=aylik_once:
+        ms_C[i] = round((aylik + mt.ceil(aylik/3))*0.07,2) 
+        ms_B[i] = round((aylik + mt.ceil(aylik/3))*0.15,2)
     else:
         ms_C[i]= (aylik_once + mt.ceil(aylik/3))*0.07
         ms_yukselme_C_net[i]= aylik - aylik_once
@@ -446,8 +451,9 @@ dic = {"Toplam Brüt Ücret": Toplam,"Toplam MS'Lİ Brüt Ücret": Toplam_Ms_Dah
        "ms yükselme C net": ms_yukselme_C_net,"ms yükselme B net":ms_yukselme_B_net
        }
 
-dic_vrb={"Toplam sabit brütler": Toplam_brut,"Vergi Matrahı": vm,"Ek görev brüt": ek_gorev_brut,"jestiyon brüt":jest_brut,"MS Brüt tutar": ms_B_brüt, "MS Net tutar": ms_B,
-         "devreden1 kullanılan":devreden1_kullanılan,"devreden2 kullanılan":devreden2_kullanılan
+dic_vrb={"MS Banka Brüt tutar": ms_B_brüt, "MS Banka Net tutar": ms_B,
+         "ms yükselme C net": ms_yukselme_C_net,"ms yükselme B net":ms_yukselme_B_net,"ms yükselme B brüt":ms_yukselme_B_brut
+
          }
 
 dic_13={"Küm GV": kvm,"Devreden1":devreden1,"Devreden2":devreden2, "çalışan_devreden_1": devreden1c, "çalışan_devreden_2": devreden2c,"Banka_dev_1": devreden1b, "banka dev 2": devreden2b,
