@@ -234,15 +234,17 @@ aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağu
 
  
 st.sidebar.header("Kullanıcı Girdileri")
+zamlı_aylik=0
 with st.sidebar.expander("Aralık Ayı Ücretleriniz ve Zam Uygulaması"):
     onceki_aylik[0] = st.number_input("Aralık Ayı Aylık Ücretiniz (Brüt TL):", step=1000,value=0) # i=0: Aralık Ayı indeksi
-    aralik_tazm=st.number_input("Aralık Ayı Tazminat Toplamınız (Brüt TL):", min_value=0, step=1000) 
+    #aralik_tazm=st.number_input("Aralık Ayı Tazminat Toplamınız (Brüt TL):", min_value=0, step=1000) 
     zam=st.button("Zam uygula")
+    if zam==True:
+        zamlı_aylik= mt.ceil(onceki_aylik[0] * 1.50)
+    st.write(f"Zamlı Aylık Tutarınız: {format(zamlı_aylik, ',').replace(',', '.')} TL")
     
-if zam==True:
-   Aylık[0]= mt.ceil(onceki_aylik[0] * 1.50)
 
-zam=False   
+  
 
 
 for i, ay in enumerate(aylar):
@@ -401,13 +403,17 @@ for i in range(12): # i = ilgili ay, 12 ay için döngü
     idv[i] = min(idv[i],dv[i])
     net[i] = max(0,round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]-ms_C[i]-ms_B[i]-ms_yukselme_C_net[i]-ms_yukselme_B_net[i]),2))
 
-    net_msli[i]= round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]-ms_C[i]),2)
-    net_mscli[i] = round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]),2)
+    #net_msli[i]= round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]-ms_C[i]),2)
+    #net_mscli[i] = round((Toplam_Ms_Dahil[i]-(sske[i]+sski[i]+dv[i]+gv[i]) + igv[i] + idv[i]),2)
     ktoplam[i] = devreden1_kullanılan[i] + devreden2_kullanılan[i]
     dtoplam[i] = devreden1[i] + devreden2[i]
+    
+
+kesinti_esis_toplam = sum(sske) + sum(sski)
+kesinti_gvdv_toplam = sum(dv) + sum(gv) 
+kesinti_toplam = kesinti_esis_toplam + kesinti_gvdv_toplam + sum(ms_C) + sum(ms_yukselme_C_net)
 
 # ---- Ay Tabloları Gösterim --- --------------------------------------------------
-
 
 # Renk teması ayarları
 background_colors = ["#fce4ec", "#e3f2fd", "#f8bbd0"]  # Pembe-mavi tonları
@@ -434,7 +440,7 @@ with st.expander("Aylık Ücretler Detayları", expanded=True):
                     <p><strong>Toplam Ücret</strong> (Brüt TL)</p>
                     <p>{format(Toplam[i], ',').replace(',', '.')} TL</p>
                     <p><strong>Yaklaşık Net Ücret</strong></p>
-                    <p>{format(net_mscli[i], ',').replace(',', '.')} TL</p>
+                    <p>{format(net[i], ',').replace(',', '.')} TL</p>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -446,9 +452,9 @@ with st.expander("Aylık Ücretler Detayları", expanded=True):
 
 #sonuç sözlüğü toparlama tablosu
 
-dic = {"Toplam Brüt Ücret": Toplam,"Toplam MS'Lİ Brüt Ücret": Toplam_Ms_Dahil,"Emekli Sandığı Payı":sske,"Emekli Sandığı İşsizlik Payı":sski,"Devreden Toplam": dtoplam,"Devreden Kullanılan": ktoplam,"Gelir Vergisi":gv,"Damga Vergisi İstisnası":idv,"Vergi İstisnası": igv, 
-       "Munzam Çalışan Payı": ms_C,"Net Tutar": net,"Net Tutar (Ms Calısan)": net_mscli,"Net Tutar MS bankalı": net_msli,
-       "ms yükselme C net": ms_yukselme_C_net,"ms yükselme B net":ms_yukselme_B_net
+dic = {"Toplam Brüt Ücret": Toplam,"Emekli Sandığı Payı (%14)":sske,"Emekli Sandığı İşsizlik Payı(%1)":sski,"Gelir Vergisi":gv,
+       "Damga Vergisi İstisnası":idv,"Vergi İstisnası": igv,"Devreden Toplam Matrah": dtoplam,"Devreden Matrahtan Kullanılan": ktoplam, 
+       "Munzam Sandık Çalışan Payı (%7)": ms_C,"Munzam Sandık Yükselme Payı": ms_yukselme_C_net,"Yaklaşık Net Tutar": net,
        }
 
 dic_vrb={"MS Banka Brüt tutar": ms_B_brüt, "MS Banka Net tutar": ms_B,
@@ -502,6 +508,61 @@ tablo_ms = tablo_ms.applymap("{0:,.2f}₺".format) # format
 tablo_mt = tablo_mt.applymap("{0:,.2f}₺".format) # format
 
 #streamlit tablo gösterimi
-st.table(tablo)
+with st.expander("Yıllık Ücretleriniz Tablo Gösterimi"):
+    st.table(tablo)
+
 st.table(tablo_ms)
 st.table(tablo_mt)
+
+
+#---- PİE Charts ---- 
+
+import altair as alt
+
+with st.expander("Yıllık Ücret Dağılımınız", expanded=False):# Donut chart verisi
+    donut_data = pd.DataFrame({
+        "Kategori": ["Net Ücret", "Kesintiler"],
+        "Tutar": [sum(net), kesinti_toplam]
+    })
+
+    # Özel renk skalası
+    color_scale = alt.Scale(
+        domain=["Net Ücret: " + f"{sum(net):,.0f} TL", "Kesintiler: " + f"{kesinti_toplam:,.0f} TL"],
+        range=["#FF69B4", "#40E0D0"]  # Pembe ve Turkuaz
+    )
+
+    # Donut Chart oluşturma
+    base_chart = alt.Chart(donut_data).mark_arc(innerRadius=100, outerRadius=150).encode(
+        theta=alt.Theta("Tutar:Q", stack=True),  # Dilim büyüklükleri
+        color=alt.Color("Kategori:N", scale=color_scale, legend=alt.Legend(title="Kategori")),  # Renkler
+        tooltip=[
+            alt.Tooltip("Kategori:N")  # Tooltip'te sadece Kategori sütunu gösterilir
+        ]
+    ).properties(
+        width=500,
+        height=500
+    )
+
+    # "Kategori" ile "Tutar" bilgisini birleştirme
+    donut_data["Kategori"] = donut_data["Kategori"] + ": " + donut_data["Tutar"].apply(lambda x: f"{x:,.0f} TL")
+
+    # Dilimlere tutar değerlerini ekleme
+    text_chart = alt.Chart(donut_data).mark_text(radiusOffset=-20, fontSize=12).encode(
+        theta=alt.Theta("Tutar:Q", stack=True),
+        text=alt.Text("Tutar:Q", format=',')
+    )
+
+    # Ortadaki brüt ücreti ekleme
+    center_text = alt.Chart(pd.DataFrame({"label": [f"Brüt Ücret: {sum(Toplam):,} TL"]})).mark_text(
+        fontSize=16,
+        align='center',
+        baseline='middle'
+    ).encode(
+        text='label:N'
+    )
+
+    # Grafik katmanlama
+    donut_chart = base_chart + center_text
+
+    # Streamlit üzerinden Donut Chart gösterimi
+    st.altair_chart(donut_chart, use_container_width=True)
