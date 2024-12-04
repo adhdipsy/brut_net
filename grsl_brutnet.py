@@ -6,6 +6,7 @@ import numpy as np
 
 import math as mt
 
+import random
  
 
 Aylık = [0]*12 #Aylık Ücret
@@ -303,41 +304,75 @@ def matrah_artigi_topla(i,a,b):
     matrah_artigi_2[i]+=b
     return matrah_artigi_1[i],matrah_artigi_2[i]
 
+def asgari_ucret_uyari(ucret):
+    if ucret < 20002:
+        return st.error(f"Uyarı: Toplam brüt tutarınız {ucret} TL. Bu tutar 20.002 TL'nin altında olmamalıdır.")
+
 
 # Kullanıcı Girdileri için Ay Bazında Grup Kutuları
 
 aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 
- 
-st.sidebar.header("Kullanıcı Girdileri")
+
+if 'info_shown_sidebar' not in st.session_state:
+    st.session_state.info_shown_sidebar = False
+
+with st.sidebar:
+    if st.button("📣 Uygulama Hakkında"):
+        st.session_state.info_shown_sidebar = not st.session_state.info_shown_sidebar
+        
+
+if st.session_state.info_shown_sidebar:
+    st.info("💁 Net Gelir Hesaplama uygulaması ile yan taraftan giriş yapacağınız ücretlerinizin yıl içerisindeki brüt/net dağılımını aşağıdaki tablolarımız ile görebilirsiniz")
+    st.info("Bilgilendirmeyi tamamladıysak Uygulama Hakkında butonuna tıklayarak kutuları kapatalıbirsiniz ",icon="✅")
+
+st.sidebar.header("Ücret Girdi Alanları")
+
 zamlı_aylik=0
 with st.sidebar.expander("2024 Aralık"):
-    onceki_aylik[0] = st.number_input("2024 Aralık Maaş Tutarınız (Brüt TL):", step=1000,value=0) # i=0: Aralık Ayı indeksi
+    onceki_aylik[0] = st.number_input("Maaş Tutarınız (Brüt TL):", step=1000,value=0
+        ,help=":money_with_wings: Bu alan 2024 yılı Aralık maaşınız ve 2025 Ocak maaşınızın arasındaki yükselme farkı hesaplaması için oluşturulmuştur.") # i=0: Aralık Ayı indeksi
 
 for i, ay in enumerate(aylar):
     with st.sidebar.expander(f"2025 {ay}"):
         # Sabit Ödemeleriniz kısmı
         with st.container():
             st.markdown("### **Sabit Ödemeleriniz**")
-            Aylık[i] = st.number_input(f"Maaş Tutarınız (Brüt TL)",value=Aylık[i] if i == 0 else Aylık[i - 1], key=f"Aylik_{i}")
+            Aylık[i] = st.number_input(f":money_with_wings: Maaş Tutarınız (Brüt TL)",step=1000,value=Aylık[i] if i == 0 else Aylık[i - 1], key=f"Aylik_{i}",
+                help="Lütfen bordronuzdaki Maaş kalemini giriniz")
+            
             ikramiye[i] = mt.ceil(Aylık[i] / 3)
-            st.write(f"İkramiye Tutarınız: {format(ikramiye[i], ',').replace(',', '.')} TL")
-            Tazm_Top[i] = st.number_input(f"Tazminat Toplamlarınız (Brüt TL)", step=1000, value=Tazm_Top[i - 1] if i > 0 else 0, key=f"Tazm_Top_{i}")
-            ek_gorev[i] = st.number_input(f"İlave Ödemeleriniz (Net TL)", step=1000, value=ek_gorev[i - 1] if i > 0 else 0, key=f"ek_gorev_{i}")
-            yemek_gun_say[i]= st.number_input(f"Yemek Gün Sayınızı Giriniz", step=1, value=yemek_gun_say[i - 1] if i > 0 else 0, key=f"yemek_gun_say{i}")
+            st.write(f":money_with_wings: İkramiye Tutarınız: {format(ikramiye[i], ',').replace(',', '.')} TL")
+            
+            Tazm_Top[i] = st.number_input(f":money_with_wings: Tazminat Toplamlarınız (Brüt TL)", step=1000, value=Tazm_Top[i - 1] if i > 0 else 0, key=f"Tazm_Top_{i}",
+                help="Unvan, Yabancı Dil, Kambiyo, Mali Tahlil gibi tazminatlarınızın toplamını giriniz")
+            
+
+            ek_gorev[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Net TL)", step=1000, value=ek_gorev[i - 1] if i > 0 else 0, key=f"ek_gorev_{i}"
+                ,help="Net bir ödeneğiniz varsa net tutar kadar giriniz")
+            
+            yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=yemek_gun_say[i - 1] if i > 0 else 0, key=f"yemek_gun_say{i}")
             yemek_net[i]=yemek_gun_say[i] * banka_yemek[i]
+            
             send_aidat[i]=Aylık[i] * 0.015
             
+            asgari_ucret_uyari(Aylık[i]+ikramiye[i]+Tazm_Top[i])
+            
+             
 
         # Değişken Ödemeleriniz kısmı
         st.markdown("### **Değişken Ödemeleriniz**")
         
         if i==3:
-            ilave[i] = st.number_input(f"İlave Ödemeniz ör.PYS Prim/Satış Primi/Temettü (Brüt TL)", step=1000, value=0, key=f"ilave_{i}")
-            jest[i] = st.number_input(f"Jestiyon Tutarınız (Net TL)", step=1000, value=0, key=f"jest_{i}")
+            ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=0, key=f"ilave_{i}"
+                ,help="Ay içerisinde almış olduğunuz ilave brüt ödeneklerinizin (Satış Primi, Pys Primi, Temettü) toplamını girebilirsiniz.")
+            jest[i] = st.number_input(f"Jestiyon Tutarınız (Net TL)", step=1000, value=0, key=f"jest_{i}"
+                ,help="Jestiyon tutarınızı NET TL olarak giriniz")
             
         else:
-            ilave[i] = st.number_input(f"İlave Ödemeniz ör.PYS Prim/Satış Primi (Brüt TL)", step=1000, value=0, key=f"ilave_{i}")
+            ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=0, key=f"ilave_{i}"
+                ,help="Ay içerisinde almış olduğunuz ilave brüt ödeneklerinizin (Satış Primi, Pys Primi, Temettü) toplamını girebilirsiniz.")
+
 
 
 
