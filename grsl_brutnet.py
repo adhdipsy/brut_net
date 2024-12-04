@@ -631,8 +631,8 @@ with st.expander("Yıllık Ücretleriniz Tablo Gösterimi"):
 
 
 
-st.table(tablo_ms)
-st.table(tablo_mt)
+#st.table(tablo_ms)
+#st.table(tablo_mt)
 
 
 #---- PİE Charts ---- 
