@@ -6,6 +6,8 @@ import numpy as np
 
 import math as mt
 
+import random
+
  
 
 Aylık = [0]*12 #Aylık Ücret
@@ -637,19 +639,23 @@ def tutar_format(value):
 
 import altair as alt
 
-with st.expander("Yıllık Ücret Dağılımı", expanded=False):# Donut chart verisi
-    
-
+with st.expander("Yıllık Ücret Dağılımı", expanded=False):
+    # Donut chart verisi
     donut_data = pd.DataFrame({
         "Kategori": ["Net Ücret", "Kesintiler"],
-        "Tutar": [sum(net),kesinti_toplam]
+        "Tutar": [sum(net), kesinti_toplam]
     })
 
-    a=tutar_format(sum(net))
-    b=tutar_format(kesinti_toplam)
+    # Tutarları formatlayalım
+    a = tutar_format(sum(net))
+    b = tutar_format(kesinti_toplam)
+
+    # "Kategori" ile "Tutar" bilgisini birleştirme (grafikten önce yapılır)
+    donut_data["Kategori"] = donut_data["Kategori"] + ": " + donut_data["Tutar"].apply(lambda x: f"{tutar_format(x)} TL")
+
     # Özel renk skalası
     color_scale = alt.Scale(
-        domain=["Net Ücret: " + f"{a} TL", "Kesintiler: " + f"{b} TL"],
+        domain=donut_data["Kategori"].tolist(),  # Güncellenmiş Kategori sütununu kullan
         range=["#FF69B4", "#40E0D0"]  # Pembe ve Turkuaz
     )
 
@@ -665,15 +671,6 @@ with st.expander("Yıllık Ücret Dağılımı", expanded=False):# Donut chart v
         height=500
     )
 
-    # "Kategori" ile "Tutar" bilgisini birleştirme
-    donut_data["Kategori"] = donut_data["Kategori"] + ": " + donut_data["Tutar"].apply(lambda x: f"{x:,.0f} TL")
-
-    # Dilimlere tutar değerlerini ekleme
-    text_chart = alt.Chart(donut_data).mark_text(radiusOffset=-20, fontSize=12).encode(
-        theta=alt.Theta("Tutar:Q", stack=True),
-        text=alt.Text("Tutar:Q", format=',')
-    )
-
     # Ortadaki yazılar için iki ayrı katman
     center_text_label = alt.Chart(pd.DataFrame({
         "label": ["Ücretler Toplamı (Brüt TL)"]
@@ -686,7 +683,7 @@ with st.expander("Yıllık Ücret Dağılımı", expanded=False):# Donut chart v
         text='label:N'
     )
 
-    formatlanmıs_brut=tutar_format(round(sum(Toplam), 2))
+    formatlanmıs_brut = tutar_format(round(sum(Toplam), 2))
 
     center_text_value = alt.Chart(pd.DataFrame({
         "value": [f"{formatlanmıs_brut} TL"]
@@ -699,10 +696,8 @@ with st.expander("Yıllık Ücret Dağılımı", expanded=False):# Donut chart v
         text='value:N'
     )
 
-
     # Grafik katmanlama
     donut_chart = base_chart + center_text_label + center_text_value
 
     # Streamlit üzerinden Donut Chart gösterimi
     st.altair_chart(donut_chart, use_container_width=True)
-
