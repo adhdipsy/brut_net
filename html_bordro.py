@@ -529,8 +529,11 @@ for i, ay in enumerate(aylar):
                 
                 yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=html_yemek_gun_say, key=f"yemek_gun_say{i}",disabled=True)
                 
-                yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=html_yemek_secimi(i) if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True,disabled=True)
-
+                if i==0 or i==6:
+                    yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=html_yemek_secimi(i) if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True,disabled=True)
+                else:
+                    yemek_secim[i]=yemek_secim[i-1]
+                    
                 ek_gorev[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Net TL)", step=1000, value=html_net_gelir_a, key=f"ek_gorev_{i}"
                     ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
             
@@ -549,9 +552,10 @@ for i, ay in enumerate(aylar):
             
                 yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=yemek_gun_say[i - 1] if i > 0 else 0, key=f"yemek_gun_say{i}")
                 
-                
-                yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=0 if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True)
-                
+                if i==0 or i==6:
+                    yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=0 if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True)
+                else:
+                    yemek_secim[i]=yemek_secim[i-1]
                 
                 yemek_net[i]=yemek_gun_say[i] * banka_yemek[i]
                 
@@ -929,5 +933,3 @@ with st.expander("Yıllık Ücret Dağılımı", expanded=False):
 
     # Streamlit üzerinden Donut Chart gösterimi
     st.altair_chart(donut_chart, use_container_width=True)
-
-
