@@ -5,6 +5,10 @@ import math as mt
 import random
 from bs4 import BeautifulSoup
 import re
+import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import altair as alt
+
 
 aylar = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]
 Aylık = [0]*12 #Aylık Ücret
@@ -111,7 +115,7 @@ tazminat_kalemleri = [
     "Avukatlık Tazminatı (1)", "Avukatlık Tazminatı (2)", "BT Müfettiş Tazminatı",
     "BT Tazminatı", "BT Tazminatı (1)", "BT Tazminatı (2)", "BT Vardiya Tazminatı",
     "Çağrı Test Tazminatı", "Güvenlik ve Koruma Tazminatı", "İç Kontrol Görevlileri Tazminatı",
-    "Kambiyo Tazminatı", "Kıbrıs Tazminatı", "Kıd.BT Müfettiş Tazminatı", "Kıd.Kasa Tazminatı",
+    "Kambiyo Tazminatı", "Kıbrıs Tazminatı", "Kıd.BT Müfettiş Tazminatı",
     "Kıd.Ünvan Tazminatı", "Mali Tahlil Tazminatı", "Müfettiş Ödeneği",
     "Mühendislik-Mimarlık Tazminatı  (2)", "Mühendislik-Mimarlık Tazminatı (1)",
     "Ölüm ve Yaralanma Tazminatı", "Proje Sorumluluğu Tazminatı", "Sınav Teşvik Ödeneği",
@@ -377,121 +381,6 @@ def netten_brute_yemek_ayni(i,gv_matrah,net, gun, indirim = None):
     brut = brut_vergi(gv_matrah, vergili_kisim) + istisna
     return brut
 
-
-
-
-if 'info_shown_sidebar' not in st.session_state:
-    st.session_state.info_shown_sidebar = False
-
-with st.sidebar:
-    if st.button("📣 Uygulama Hakkında"):
-        st.session_state.info_shown_sidebar = not st.session_state.info_shown_sidebar
-        
-
-
-if st.session_state.info_shown_sidebar:
-    #st.caption("### Bu uygulama finansal planlamanı daha etkili bir şekilde yapmana yardımcı olmak için geliştirilmiştir. Tasarlanan bu özel uygulama ücret hesaplamalarını kolaylaştırmayı amaçlıyor. Ücret detaylarını uygulamaya girerek ya da son bordronu yükleyerek yıl içinde oluşacak yaklaşık net gelirini kolayca öğrenebileceksin")    
-    st.markdown("""
-    <style>
-    .custom-box {
-        background-color: #f0f9ff;
-        border: 1px solid #2196F3;
-        border-radius: 10px;
-        padding: 10px;
-        color: #333333;
-        margin-bottom: 16px;
-    }
-    </style>
-
-    <div class="custom-box">
-        Bu uygulama finansal planlamanı daha etkili bir şekilde yapmana yardımcı olmak için geliştirilmiştir. Tasarlanan bu özel uygulama ücret hesaplamalarını kolaylaştırmayı amaçlıyor. Ücret detaylarını uygulamaya girerek ya da son bordronu yükleyerek yıl içinde oluşacak yaklaşık net gelirini kolayca öğrenebileceksin
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        with st.container(height=250,border=True):
-            st.write("📂 Bordro Dosyası Yükleme")
-            st.info("1️⃣ Her ay sonu gelen bordro mailinin ekindeki bordro.html dosyasını yükleyebilirsin. Yükleme yaptığın ay ve sonrası otomatik doldurulacak ancak önceki aylara giriş yapman engellenecektir.")
-
-    with col2:
-        with st.container(height=250,border=True):
-            st.write("✍🏼 Manuel Giriş")
-            st.info("2️⃣ Eğer bordro yüklemeden tüm yıl içindeki net gelirlerini hesaplamak istiyorsan, sol tarafta yer alan ücret girdi panelinde Ocak ayından itibaren yıllık ücret detaylarını sisteme ekleyebilirsin")
-        
-    st.info("Uygulamamız ile bordronuzdaki tutarların yaklaşık olmasını beklemekteyiz. __Çocuk zammı, kasa tazminatı__ gibi bireysel ödemeler ve bireysel sigorta gibi kesintiler henüz uygulamamıza dahil değildir", icon="❗")
-    st.info("Bilgilendirmeyi tamamladıysan '📣 Uygulama Hakkında' butonuna tıklayarak bilgi kutularını kapatabilirsin ",icon="💯")
-
-st.sidebar.header("Ücret Girdi Paneli")
-
-
-with st.sidebar.expander("📂 **Bordro Dosyası Yükleme**", expanded=False):
-    st.markdown(
-        """
-        İstersen aşağıdaki alana **HTML bordro dosyanı** yükleyebilirsin:
-        - 📥 **Dosya Adı**: `bordro.html`
-        """,
-        help="Her ay sonu gelen bordro mailinin ekindeki bordro.html dosyasını yüklemelisin. Aynı zamanda IKON > Çalışan İşlemleri > E-Bordro sayfasından bordronu kendine mail atabilirsin"
-    )
-    uploaded_file = st.file_uploader(
-        "📂 **HTML Bordro Dosyası Seç**",
-        type=["html"],
-        help="Bordro dosyanı buradan yükleyerek hesaplamalara başlayabilirsin",
-    )
-    st.markdown(" 🛠️ **Alternatif**: Dosya yüklemeden aşağıdaki ücret alanlarına manuel giriş de yapabilirsin")                                    
-
-if uploaded_file is not None:
-    # HTML içeriğini okuma ve ayrıştırma
-    try:
-        html_content = uploaded_file.read().decode("ISO-8859-9")
-    except UnicodeDecodeError:
-        st.error("Dosya kodlaması okunamadı. Lütfen doğru dosyayı yüklediğinizden emin olun.")
-
-if html_content: #Yüklenen bordronun ayrı tablo ve dataframe'lere ayrılması
-    # BeautifulSoup ile HTML'i ayrıştırma
-    soup = BeautifulSoup(html_content, 'html.parser')
-    
-    # Tabloları bulma
-    tables = soup.find_all('table')
-    #st.write(f"Toplam {len(tables)} tablo bulundu.")
-
-    # Tabloları ayrı ayrı ayrıştırma ve gösterme
-    if len(tables) > 0:
-        for i, table in enumerate(tables):
-            table_data = []
-            rows = table.find_all('tr')
-            for row in rows:
-                columns = row.find_all('td')
-                if columns:  # Sütunları varsa ekle
-                    row_data = [col.get_text(strip=True) for col in columns]
-                    table_data.append(row_data)
-
-            # DataFrame oluşturma
-            df = pd.DataFrame(table_data)
-            #st.write(f"Tablo {i + 1}")
-            #st.dataframe(df)
-            table_bordro.append(df)
-        
-       
-        
-        if table_bordro and len(table_bordro) > 1:
-            cell_value = table_bordro[1].loc[4, 1]  # Hücre değerini al
-            if isinstance(cell_value, str) and '-' in cell_value and '/' in cell_value:
-                # Ay bilgisi mevcut ve format uygunsa işle
-                yuklenen_bordro_ay = int(cell_value.split('-')[1].split('/')[0])
-            else:
-                # Format hatalıysa varsayılan değer kullan
-                yuklenen_bordro_ay = 0  # Varsayılan ay (örneğin 1)
-        else:
-            # Tablolar mevcut değilse varsayılan değer ata
-            yuklenen_bordro_ay = 0  # Varsayılan ay    
-
-        st.info(f"✅ {aylar[yuklenen_bordro_ay-1]} ayı bordrosu başarıyla yüklendi, ilgili bordro ayından sonraki aylar için değişiklik yaparak programı kullanabilirsin")    
-    else:
-        st.write("Hiç tablo bulunamadı.")
-
-
 def veri_getir(bordro_kalem):
     tutar = 0.0
     try:
@@ -568,27 +457,6 @@ def taztop(bordro_kalem):
         tutar=0
     return tutar
 
-
-yemek_is_gunu = None
-
-# Eğer tables mevcutsa işlem yap
-if 'tables' in locals() and len(tables) > 3:  # tables tanımlı ve en az 4 tablo varsa
-    for row in tables[3].find_all('tr'):  # "Yemek Ücreti" satırından iş günü sayısını alma
-        cells = row.find_all('td')
-        if len(cells) > 1:
-            key = cells[0].get_text(strip=True)
-            if "Yemek Ücreti" in key or "Yemek Çeki/ Kartı" in key:
-                # Parantez içindeki sayıyı ayıkla
-                match = re.search(r'\((\d+)\s*iş günü\)', key)
-                if match:
-                    yemek_is_gunu = int(match.group(1))
-                    break
-else:
-    # Eğer tables tanımlı değilse veya yeterince tablo yoksa varsayılan değer
-    yemek_is_gunu = 0  # Varsayılan değer
-
-yemek_index=[0] * 12 
-
 def yemek_brut_tutar():
         # Eğer tables mevcutsa işlem yap
     if 'tables' in globals() and len(tables) > 3:  # tables tanımlı ve en az 4 tablo varsa
@@ -616,6 +484,215 @@ def html_yemek_secimi():  # yemek seçim
                     index = 1
     return index
 
+def sidebar_ac():
+    st.session_state.sidebar_open = True
+
+def cont_ucur(cont_key, info_key=None):
+    st.session_state.containers[cont_key] = False  # Container görünürlüğünü False yap
+    if info_key:
+        st.session_state.info_messages[info_key] = True  # İlgili info kutusunu göster
+
+if "expanders" not in st.session_state:
+    st.session_state.expanders = {
+        "bordro_yukleme": True
+    }
+
+def html_kutu_kapa(exp_key):
+    st.session_state.expanders[exp_key] = False
+
+
+
+if "info_shown_sidebar" not in st.session_state:
+    st.session_state.info_shown_sidebar = False
+
+if "sidebar_open" not in st.session_state:
+    st.session_state.sidebar_open = False
+
+
+        
+if st.session_state.info_shown_sidebar:    
+    st.info("Uygulamamız ile bordronuzdaki tutarların yaklaşık olmasını beklemekteyiz. __Çocuk zammı, kasa tazminatı__ gibi bireysel ödemeler ve bireysel sigorta gibi kesintiler henüz uygulamamıza dahil değildir", icon="❗")
+    st.info("Temmuz ayı maaşına Toplu İş Sözleşmesi'ndeki esaslara göre zam oranı tahminini de eklemen gerektiğini hatırlatmak isteriz 😊", icon="❗")
+    st.info("Bilgilendirmeyi tamamladıysan '📣 Uygulama Hakkında' butonuna tıklayarak bilgi kutularını kapatabilirsin ",icon="💯")
+
+uploaded_file=None
+
+with st.container(border=True):
+    st.markdown('''
+    **:blue[Bu uygulama finansal planlamanı daha etkili bir şekilde yapmana yardımcı olmak için geliştirilmiştir. Tasarlanan bu özel uygulama ücret hesaplamalarını kolaylaştırmayı amaçlıyor. Ücret detaylarını uygulamaya girerek ya da son bordronu yükleyerek yıl içinde oluşacak yaklaşık net gelirini kolayca öğrenebilirsin.]**''')
+
+with st.expander("Bordro Dosyası Yükleme (Önerilen Yöntem)",icon="📎",expanded=True):
+    st.markdown(
+        """
+        - 📥 **Dosya Adı**: `Bordro.html`
+        """,
+        help="Her ay sonu gelen bordro mailinin ekindeki bordro.html dosyasını yüklemelisin. Aynı zamanda IKON > Çalışan İşlemleri > E-Bordro sayfasından bordronu kendine mail atabilirsin"
+    )
+    
+    uploaded_file = st.file_uploader(
+        "⬆️ HTML Bordro Dosyası Yükleme Alanı",
+        type=["html"],
+        help="İstediğin bir ayın bordro dosyanı buradan yükleyerek hesaplamalara başlayabilirsin",
+    )
+        
+
+
+if uploaded_file is not None:  # Yalnızca dosya yüklendiyse çalıştır
+    try:
+        # Dosya içeriğini oku
+        html_content = uploaded_file.read().decode("ISO-8859-9")
+        
+        # HTML içeriğini ayrıştırma
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html_content, 'html.parser')
+        tables = soup.find_all('table')
+
+        table_bordro = []  # Tabloları saklamak için bir liste
+        if len(tables) > 0:
+            for i, table in enumerate(tables):
+                table_data = []
+                rows = table.find_all('tr')
+                for row in rows:
+                    columns = row.find_all('td')
+                    if columns:
+                        row_data = [col.get_text(strip=True) for col in columns]
+                        table_data.append(row_data)
+
+                # DataFrame oluşturma
+                df = pd.DataFrame(table_data)
+                table_bordro.append(df)
+
+            # Tabloların uygunluğunu kontrol et ve hücre değerini al
+            if table_bordro and len(table_bordro) > 1:
+                try:
+                    cell_value = table_bordro[1].loc[4, 1]  # Hücreye erişim
+                    if isinstance(cell_value, str) and '-' in cell_value and '/' in cell_value:
+                        yuklenen_bordro_ay = int(cell_value.split('-')[1].split('/')[0])
+                    else:
+                        yuklenen_bordro_ay = 0  # Varsayılan değer
+                except (IndexError, KeyError):  # Hücre mevcut değilse
+                    st.warning("Yüklediğiniz dosyada beklenen formatta bir tablo veya hücre bulunamadı.")
+                    yuklenen_bordro_ay = 0  # Varsayılan ay
+            else:
+                st.warning("Beklenen formatta bordro tablosu bulunamadı.")
+                yuklenen_bordro_ay = 0  # Varsayılan ay
+
+            # Eğer tablo başarıyla ayrıştırılmışsa
+            if yuklenen_bordro_ay > 0:
+                sidebar_ac()
+                st.info(
+                    f"✅ {aylar[yuklenen_bordro_ay - 1]} ayı bordrosu başarıyla yüklendi."
+                )
+                with st.expander("❗ Bordro Yükleme Adımları",expanded=True):
+                    st.markdown(
+                        """
+                        1️⃣ Aralık ayı maaş tutar bilgisini girmelisin (sadece 01.01.2025 tarihinden önce Bankamızda çalışmaya başladıysan).
+                        
+                        2️⃣ Açılan panellerden yüklediğin bordro ayından sonraki aylar için değişiklik yaparak programı kullanabilirsin.                
+                        
+                        3️⃣ Yüklediğin bordro ayından önceki aylar için manuel girişler kapalı olacaktır ve hesaplamalara dahil edilmeyecektir.
+                        
+                        4️⃣ Pys Primi, temettü gibi değişken ücretlerini de ilgili aylar için girmelisin.
+                        
+                        5️⃣ Aşağıdaki tablo ve grafikler ile ücretlerinin yıl içindeki dağılımını görebilirsin.
+                        
+                        
+                        Bilmende Fayda Var:
+                        
+                        - Uygulama şuan için kasa tazminatı, çocuk yardımı gibi bireysel ödemeleri kapsamamaktadır.
+                        - Temmuz ayından itibaren Toplu İş Sözleşmesi’nde belirlenen esaslara göre zam artış oranı tahminini eklemelisin.
+                        
+                        """                    
+                            )
+                cont_ucur("cont_mg")
+            else:
+                st.warning("Bordro dosyanız uygun formatta değil. Lütfen doğru bir dosya yükleyin.")
+        else:
+            st.warning("Yüklediğiniz dosyada hiç tablo bulunamadı. Lütfen bordro dosyanızın doğru formatta olduğundan emin olun.")
+    except UnicodeDecodeError:
+        st.error("Dosya kodlaması okunamadı. Lütfen doğru dosyayı yüklediğinizden emin olun.")
+
+
+# Session state başlatma
+if "containers" not in st.session_state:
+    st.session_state.containers = {
+        "cont_html": True,
+        "cont_mg": True,
+    }
+
+if "info_messages" not in st.session_state:
+    st.session_state.info_messages = {
+        "info_mg": False,  # Manuel giriş info kutusu başlangıçta gizli
+        "info_html": False  # Diğer info kutusu başlangıçta gizli
+    }
+
+# Placeholder'lar
+placeholder1 = st.empty()
+placeholder2 = st.empty()
+
+# Manuel Giriş Container
+if st.session_state.containers["cont_mg"]:
+    with placeholder2.container(border=True):  # Placeholder içinde container
+        col1, col2 = st.columns(2)
+        with col1:
+            st.write("✍🏼 Manuel Giriş (Alternatif Yöntem)")
+        with col2:
+            if st.button(
+                "Manuel Giriş",
+                help="Manuel Giriş butonuna tıkladığında ücret girdi paneli açılır ve panel ile ücretlerini girerek tahmini hesaplamlar yapabilirsin",
+                key="btn_close_bordro"
+            ):
+                # Butona tıklandığında container'ı gizle ve bilgi mesajını göster
+                html_kutu_kapa("bordro_yukleme")
+                sidebar_ac()
+                cont_ucur("cont_mg", "info_mg")
+                placeholder2.empty()  # Placeholder temizlenir
+                
+
+# Bilgi Mesajı: Manuel Giriş
+if st.session_state.info_messages["info_mg"]:
+    #st.info("Manuel giriş adımları;yaparken solda açılan pencerede yer alan tüm alanları doldurman gerekiyor. Alanların içindeki açıklamalar ücretlerini doğru girmen için yardımcı olacaktır.",icon="❗")
+        with st.expander("❗ Manuel Giriş Adımları",expanded=True):
+            st.markdown(
+            """
+            1️⃣ Aralık ayı maaş tutar bilgisini girmelisin (sadece 01.01.2025 tarihinden önce Bankamızda çalışmaya başladıysan).
+            
+            2️⃣ Ocak ayına sabit ücretlerini (maaş, tazminat ...) girmelisin, uygulama kalan ayları otomatik dolduracaktır.
+            
+            3️⃣ Pys Primi, temettü gibi değişken ücretlerini de ilgili aylar için girmelisin.
+            
+            4️⃣  Aşağıdaki tablo ve grafikler ile ücretlerinin yıl içindeki dağılımını görebilirsin.
+            
+            Bilmende Fayda Var:
+            
+            - Uygulama şuan için kasa tazminatı, çocuk yardımı gibi bireysel ödemeleri kapsamamaktadır.
+            - Temmuz ayından itibaren Toplu İş Sözleşmesi’nde belirlenen esaslara göre zam artış oranı tahminini eklemelisin.
+            
+            """   
+        )
+    
+
+yemek_is_gunu = None
+
+# Eğer tables mevcutsa işlem yap
+if 'tables' in locals() and len(tables) > 3:  # tables tanımlı ve en az 4 tablo varsa
+    for row in tables[3].find_all('tr'):  # "Yemek Ücreti" satırından iş günü sayısını alma
+        cells = row.find_all('td')
+        if len(cells) > 1:
+            key = cells[0].get_text(strip=True)
+            if "Yemek Ücreti" in key or "Yemek Çeki/ Kartı" in key:
+                # Parantez içindeki sayıyı ayıkla
+                match = re.search(r'\((\d+)\s*iş günü\)', key)
+                if match:
+                    yemek_is_gunu = int(match.group(1))
+                    break
+else:
+    # Eğer tables tanımlı değilse veya yeterince tablo yoksa varsayılan değer
+    yemek_is_gunu = 0  # Varsayılan değer
+
+yemek_index=[0] * 12 
+
+
 for ozan in range(len(yemek_index)):
     yemek_index[ozan] = html_yemek_secimi()
 
@@ -633,95 +710,109 @@ html_ek_gorev_net=html_brutten_nete(veri_getir_ucrettablosu("İştirak Görev Ü
 
 html_net_gelir = html_ek_gorev_net + html_kıra_yardımı_net 
 
+if 'info_shown_sidebar' not in st.session_state:
+    st.session_state.info_shown_sidebar = False
 
 
-with st.sidebar.expander("🗓️ 2024 Aralık"):
-    onceki_aylik[0] = st.number_input(":money_with_wings: Maaş Tutarınız (Brüt TL):", step=1000,value=0
-        ,help="Bu alan 2024 yılı Aralık maaşınız ve 2025 Ocak maaşınızın arasındaki Munzam Sandık yükselme farkı hesaplaması için oluşturulmuştur. Bu alana giriş yapmazsan Munzam Sandık yükselme payı hesaplamalarda dikkate alınamayacaktır") # i=0: Aralık Ayı indeksi
+if st.session_state.sidebar_open: 
+    if st.sidebar.button("📣 Uygulama Hakkında"):
+        st.session_state.info_shown_sidebar = not st.session_state.info_shown_sidebar
+    
 
-for i, ay in enumerate(aylar):
-    with st.sidebar.expander(f"🗓️ 2025 {ay}",expanded=(i==yuklenen_bordro_ay-1)):
-        # Sabit Ödemeleriniz kısmı
-        with st.container():
-            st.markdown("### **Sabit Ödemeleriniz**")
-            if i < yuklenen_bordro_ay: # Kullanıcı HTML yüklendiyse, yüklediği aydan öncekileri dondur
-                html_maas = int(float(veri_getir_ucrettablosu("Maaş"))) if i >= yuklenen_bordro_ay-1 else (Aylık[i - 1] if i > 0 else 0)
-                html_tazm_top_a = int(float(taztop(tazminat_kalemleri))) + int(html_kıra_yardımı_brut) if i >= yuklenen_bordro_ay-1 else (Tazm_Top[i - 1] if i > 0 else 0)
-                html_yemek_gun_say=int(float(yemek_is_gunu)) if i >= yuklenen_bordro_ay-1 else (yemek_gun_say[i - 1] if i > 0 else 0)  
-                html_net_gelir_a = int(html_net_gelir) if i >= yuklenen_bordro_ay-1 else (ek_gorev[i - 1] if i > 0 else 0)     
+    st.sidebar.header("Ücret Girdi Paneli")
 
-                Aylık[i] = st.number_input(f":money_with_wings: Maaş Tutarınız (Brüt TL)",step=1000,value=html_maas, key=f"Aylik_{i}",
-                help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
-                
-                ikramiye[i] = mt.ceil(Aylık[i] / 3)
-                st.write(f":money_with_wings: İkramiye Tutarınız: {format(ikramiye[i], ',').replace(',', '.')} TL")
-                
-                Tazm_Top[i] = st.number_input(f":money_with_wings: Tazminat Toplamınız (Brüt TL)", step=1000, value=html_tazm_top_a, key=f"Tazm_Top_{i}",
+
+    with st.sidebar.expander("🗓️ 2024 Aralık", expanded=True):
+        onceki_aylik[0] = st.number_input(":money_with_wings: Maaş Tutarınız (Brüt TL):", step=1000,value=0
+            ,help="Bu alan 2024 yılı Aralık maaşınız ve 2025 Ocak maaşın arasındaki Munzam Sandık yükselme farkı hesaplaması için oluşturulmuştur. Bu alana giriş yapmazsan Munzam Sandık yükselme payı hesaplamalarda dikkate alınamayacaktır")
+
+    for i, ay in enumerate(aylar):
+        with st.sidebar.expander(f"🗓️ 2025 {ay}",expanded=(i==yuklenen_bordro_ay-1)):
+            if i==6:
+                st.info("Temmuz ayı maaşına Toplu İş Sözleşmesi'ndeki esaslara göre zam oranı tahminini de eklemen gerektiğini hatırlatmak isteriz 😊")
+            # Sabit Ödemeleriniz kısmı
+            with st.container():
+                st.markdown("### **Sabit Ödemeleriniz**")
+                if i < yuklenen_bordro_ay: # Kullanıcı HTML yüklendiyse, yüklediği aydan öncekileri dondur
+                    html_maas = int(float(veri_getir_ucrettablosu("Maaş"))) if i >= yuklenen_bordro_ay-1 else (Aylık[i - 1] if i > 0 else 0)
+                    html_tazm_top_a = int(float(taztop(tazminat_kalemleri))) + int(html_kıra_yardımı_brut) if i >= yuklenen_bordro_ay-1 else (Tazm_Top[i - 1] if i > 0 else 0)
+                    html_yemek_gun_say=int(float(yemek_is_gunu)) if i >= yuklenen_bordro_ay-1 else (yemek_gun_say[i - 1] if i > 0 else 0)  
+                    html_net_gelir_a = int(html_net_gelir) if i >= yuklenen_bordro_ay-1 else (ek_gorev[i - 1] if i > 0 else 0)     
+
+                    Aylık[i] = st.number_input(f":money_with_wings: Maaş Tutarınız (Brüt TL)",step=1000,value=html_maas, key=f"Aylik_{i}",
                     help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
-                
-                yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=html_yemek_gun_say, key=f"yemek_gun_say{i}",disabled=True)
-                
-                if i==0 or i==6:
-                    yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=yemek_index[i] if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True,disabled=True)
-                else:
-                    yemek_secim[i]=yemek_secim[i-1]
-                
+                    
+                    ikramiye[i] = mt.ceil(Aylık[i] / 3)
+                    st.write(f":money_with_wings: İkramiye Tutarınız: {format(ikramiye[i], ',').replace(',', '.')} TL")
+                    
+                    Tazm_Top[i] = st.number_input(f":money_with_wings: Tazminat Toplamınız (Brüt TL)", step=1000, value=html_tazm_top_a, key=f"Tazm_Top_{i}",
+                        help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
+                    
+                    yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=html_yemek_gun_say, key=f"yemek_gun_say{i}",disabled=True)
+                    
+                    if i==0 or i==6:
+                        yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=yemek_index[i] if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True,disabled=True)
+                    else:
+                        yemek_secim[i]=yemek_secim[i-1]
+                    
 
-                ek_gorev[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Net TL)", step=1000, value=html_net_gelir_a, key=f"ek_gorev_{i}"
-                    ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
-            
-            else:    
-                Aylık[i] = st.number_input(f":money_with_wings: Maaş Tutarınız (Brüt TL)",step=1000,value=Aylık[i] if i == 0 else Aylık[i - 1], key=f"Aylik_{i}",
-                    help="Aylık ücretinizi bu alana girebilirsiniz (Bordronuzdaki 'Maaş' alanı)")
-            
-                ikramiye[i] = mt.ceil(Aylık[i] / 3)
-                st.write(f":money_with_wings: İkramiye Tutarınız: {format(ikramiye[i], ',').replace(',', '.')} TL")
-            
-                Tazm_Top[i] = st.number_input(f":money_with_wings: Tazminat Toplamınız (Brüt TL)", step=1000, value=Tazm_Top[i - 1] if i > 0 else 0, key=f"Tazm_Top_{i}",
-                    help="Unvan, Yabancı Dil, Kambiyo, Mali Tahlil gibi tazminatlarınızın toplamını bu alana girebilirsiniz")
-            
-                ek_gorev[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Net TL)", step=1000, value=ek_gorev[i - 1] if i > 0 else 0, key=f"ek_gorev_{i}"
-                    ,help="Sabit net gelirlerinizi bu alana girebilirsiniz")
-            
-                yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=yemek_gun_say[i - 1] if i > 0 else 0, key=f"yemek_gun_say{i}")
+                    ek_gorev[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Net TL)", step=1000, value=html_net_gelir_a, key=f"ek_gorev_{i}"
+                        ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
                 
-                if i==0 or i==6:
-                    yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=yemek_index[i] if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True)
-                else:
-                    yemek_secim[i]=yemek_secim[i-1]
-                 
-                yemek_net[i]=yemek_gun_say[i] * banka_yemek[i]
+                else:    
+                    Aylık[i] = st.number_input(f":money_with_wings: Maaş Tutarınız (Brüt TL)",step=1000,value=Aylık[i] if i == 0 else Aylık[i - 1], key=f"Aylik_{i}",
+                        help="Aylık ücretinizi bu alana girebilirsiniz (Bordronuzdaki 'Maaş' alanı)")
                 
-                asgari_ucret_uyari(Aylık[i]+ikramiye[i]+Tazm_Top[i]+ek_gorev[i])
-                yemek_index[i] = 1 if yemek_secim[i]=="Yemek Çeki" else 0
-            
-            
-            send_aidat[i]=Aylık[i] * 0.015
-                        
-        # Değişken Ödemeleriniz kısmı
-        st.markdown("### **Değişken Ödemeleriniz**")
-        if i < yuklenen_bordro_ay: # Kullanıcı HTML yüklendiyse, yüklediği aydan öncekileri dondur
-            html_brut_odenek = int(float(taztop(odemeler_listesi))) if i >= yuklenen_bordro_ay-1 else (ilave[i - 1] if i > 0 else 0)
-            html_jest_net = int(float(veri_getir("Jestiyon Ödenen"))) if i >= yuklenen_bordro_ay-1 else (jest[i - 1] if i > 0 else 0)
+                    ikramiye[i] = mt.ceil(Aylık[i] / 3)
+                    st.write(f":money_with_wings: İkramiye Tutarınız: {format(ikramiye[i], ',').replace(',', '.')} TL")
+                
+                    Tazm_Top[i] = st.number_input(f":money_with_wings: Tazminat Toplamınız (Brüt TL)", step=1000, value=Tazm_Top[i - 1] if i > 0 else 0, key=f"Tazm_Top_{i}",
+                        help="Unvan, Yabancı Dil, Kambiyo, Mali Tahlil gibi tazminatlarınızın toplamını bu alana girebilirsiniz")
+                
+                    ek_gorev[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Net TL)", step=1000, value=ek_gorev[i - 1] if i > 0 else 0, key=f"ek_gorev_{i}"
+                        ,help="Sabit net gelirlerinizi bu alana girebilirsiniz")
+                
+                    yemek_gun_say[i]= st.number_input(f"🍔 Yemek Gün Sayınızı Giriniz", step=1, value=yemek_gun_say[i - 1] if i > 0 else 0, key=f"yemek_gun_say{i}")
+                    
+                    if i==0 or i==6:
+                        yemek_secim[i]=st.radio("",options=["Nakit","Yemek Çeki"],index=yemek_index[i] if i == 0 else ["Nakit", "Yemek Çeki"].index(yemek_secim[i - 1]),key=f"yemek_secim_{i}",horizontal=True)
+                    else:
+                        yemek_secim[i]=yemek_secim[i-1]
+                    
+                    yemek_net[i]=yemek_gun_say[i] * banka_yemek[i]
+                    
+                    asgari_ucret_uyari(Aylık[i]+ikramiye[i]+Tazm_Top[i]+ek_gorev[i])
+                    yemek_index[i] = 1 if yemek_secim[i]=="Yemek Çeki" else 0
+                
+                
+                send_aidat[i]=Aylık[i] * 0.015
+                            
+            # Değişken Ödemeleriniz kısmı
+            st.markdown("### **Değişken Ödemeleriniz**")
+            if i < yuklenen_bordro_ay: # Kullanıcı HTML yüklendiyse, yüklediği aydan öncekileri dondur
+                html_brut_odenek = int(float(taztop(odemeler_listesi))) if i >= yuklenen_bordro_ay-1 else (ilave[i - 1] if i > 0 else 0)
+                html_jest_net = int(float(veri_getir("Jestiyon Ödenen"))) if i >= yuklenen_bordro_ay-1 else (jest[i - 1] if i > 0 else 0)
 
-            if i==3:
-                ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=html_brut_odenek, key=f"ilave_{i}"
-                    ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
-                jest[i] = st.number_input(f"Jestiyon Tutarınız (Net TL)", step=1000, value=html_jest_net, key=f"jest_{i}"
-                    ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
+                if i==3:
+                    ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=html_brut_odenek, key=f"ilave_{i}"
+                        ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
+                    jest[i] = st.number_input(f"Jestiyon Tutarınız (Net TL)", step=1000, value=html_jest_net, key=f"jest_{i}"
+                        ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
+                else:
+                    ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=html_brut_odenek, key=f"ilave_{i}"
+                        ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
             else:
-                ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=html_brut_odenek, key=f"ilave_{i}"
-                    ,help="Hesaplama bordro verileriniz ile devam etmektedir",disabled=True)
-        else:
-            if i==3:
-                ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=0, key=f"ilave_{i}"
-                    ,help="Ay içerisinde almış olduğunuz ilave brüt ödeneklerinizin (Satış Primi, Pys Primi, Temettü) toplamını bu alana girebilirsiniz.")
-                jest[i] = st.number_input(f"Jestiyon Tutarınız (Net TL)", step=1000, value=0, key=f"jest_{i}"
-                    ,help="Jestiyon tutarınızı NET TL olarak bu alana girebilirsiniz")
-                
-            else:
-                ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=0, key=f"ilave_{i}"
-                    ,help="Ay içerisinde almış olduğunuz ilave brüt ödeneklerinizin (Satış Primi, Pys Primi, Temettü) toplamını bu alana girebilirsiniz.")
+                if i==3:
+                    ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=0, key=f"ilave_{i}"
+                        ,help="Ay içerisinde almış olduğunuz ilave brüt ödeneklerinizin (Satış Primi, Pys Primi, Temettü) toplamını bu alana girebilirsiniz.")
+                    jest[i] = st.number_input(f"Jestiyon Tutarınız (Net TL)", step=1000, value=0, key=f"jest_{i}"
+                        ,help="Jestiyon tutarınızı NET TL olarak bu alana girebilirsiniz")
+                    
+                else:
+                    ilave[i] = st.number_input(f":money_with_wings: İlave Ödemeleriniz (Brüt TL)", step=1000, value=0, key=f"ilave_{i}"
+                        ,help="Ay içerisinde almış olduğunuz ilave brüt ödeneklerinizin (Satış Primi, Pys Primi, Temettü) toplamını bu alana girebilirsiniz.")
+
+
 
 
 yemek_brut=[0]*12
@@ -857,7 +948,6 @@ kesinti_gvdv_toplam = sum(dv) + sum(gv)
 kesinti_toplam = kesinti_esis_toplam + kesinti_gvdv_toplam + sum(ms_C) + sum(ms_yukselme_C_net)
 
 
-#sonuç sözlüğü toparlama tablosu
 
 dic = {"Toplam Brüt Ücret": Toplam,"Yaklaşık Net Tutar": net,"Yemek Çeki":(np.array(yemek_net) *np.array(yemek_index)),  
        "es matrah":sskm,
@@ -881,8 +971,6 @@ dic_vrb={"MS Banka Brüt tutar": ms_B_brüt, "MS Banka Net tutar": ms_B,
 dic_13={"Küm GV": kvm,"Devreden1":devreden1,"Devreden2":devreden2, "çalışan_devreden_1": devreden1c, "çalışan_devreden_2": devreden2c,"Banka_dev_1": devreden1b, "banka dev 2": devreden2b,
        "artan_matra" : matrah_artigi_1, "artan_matrah": matrah_artigi_2}
 
-
-#sonuç tablosu
 
 tablo = pd.DataFrame(dic, index=["Ocak","Şubat", "Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos",
 
@@ -956,38 +1044,57 @@ tablo_mt = tablo_mt.applymap("{0:,.2f}₺".format) # format
 # ---- Ay Tabloları Gösterim ----------------------------------------------------
 
 # Renk teması ayarları
-background_colors = ["#fce4ec", "#e3f2fd", "#f8bbd0"]  # Pembe-mavi tonları
-text_color = "black"
+#background_colors = ["#fce4ec", "#e3f2fd", "#f8bbd0"]  # Pembe-mavi tonları
+#text_color = "black"
 
-# Açılır kapanır grup kutusu
+
+# Farkı hesaplayın
+Kesintiler = [toplam - net for toplam, net in zip(Toplam, net)]
+
+# Verileri DataFrame'e çevir
+data = pd.DataFrame({
+    "Aylar": aylar,
+    "Net": net,
+    "Kesintiler": Kesintiler
+})
+
+# Ayları sıralı kategorik veri olarak tanımla
+data["Aylar"] = pd.Categorical(data["Aylar"], categories=[
+    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", 
+    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+], ordered=True)
+
+chart = alt.Chart(data).transform_fold(
+    ["Net", "Kesintiler"],  # Çizilecek sütunlar
+    as_=["Kategori", "Toplam Brüt Ücret (TL)"]  # Yeniden düzenlenen sütun isimleri
+).mark_bar().encode(
+    x=alt.X("Aylar:N", sort=list(aylar)),  # Ayları sabit sıraya göre göster
+    y=alt.Y("Toplam Brüt Ücret (TL):Q", scale=alt.Scale(domainMin=0)),
+    color=alt.Color(
+        "Kategori:N",
+        scale=alt.Scale(
+            domain=["Net", "Kesintiler"],  # Kategoriler
+            range=["#FF69B4", "#40E0D0"]  # Özel renkler
+        ),
+        legend=alt.Legend(title="Kategori")  # Efsane başlığı
+    ),
+    tooltip=["Aylar:N", "Kategori:N", "Toplam Brüt Ücret (TL):Q"]
+).properties(
+    width=700,  # Grafik genişliği
+    height=400,  # Grafik yüksekliği
+).configure_view(
+    stroke=None  # Grafik kenarlığını kaldırır
+).interactive()
+
+
+
+# Expander içinde grafiği göster
 with st.expander("Aylık Ücretler Detayları", expanded=False):
-    cols = st.columns(4)  # Her satırda 4 sütun
-    for i, ay in enumerate(aylar):
-        col = cols[i % 4]  # 4 sütun içinde sırasıyla yerleşim
-        with col:
-            # Her ay için kutucuk
-            st.markdown(
-                f"""
-                <div style="
-                    border: 1px solid #d1c4e9;
-                    border-radius: 8px;
-                    padding: 16px;
-                    background-color: {background_colors[i % len(background_colors)]};
-                    text-align: left;
-                    margin: 8px;
-                ">
-                    <h3 style="text-align: left; color: {text_color}; font-size: 21px;">{ay}</h3>
-                    <p><strong>Brüt Ücretler Toplamınız</strong></p>
-                    <p>{format(round(Toplam[i]), ',').replace(',', '.')} TL</p>
-                    <p><strong>Yaklaşık Net Ücretiniz</strong></p>
-                    <p>{format(round(net[i]), ',').replace(',', '.')} TL</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        # Yeni satıra geçmek için sütunları sıfırla
-        if (i + 1) % 4 == 0:
-            cols = st.columns(4)  # Yeni satır için sütunlar
+    st.altair_chart(chart, use_container_width=True)
+  
+
+
+
 #------------------------------------------------------------------------------------------
 
 
@@ -1008,7 +1115,6 @@ def tutar_format(value):
 
 #---- PİE Charts ---- 
 
-import altair as alt
 
 with st.expander("Yıllık Ücret Dağılımı", expanded=False):
     # Donut chart verisi
