@@ -1033,11 +1033,11 @@ tablo_ms.loc["Toplam"] = toplamat_ms
 
 tablo_ms.loc["Ortalama"]= ortalamat_ms
 
-tablo = tablo.applymap("{0:,.2f}₺".format) # format
+tablo = tablo.apply(lambda x: x.map("{:,.2f}₺".format) if x.dtype == "float" else x)
 
-tablo_ms = tablo_ms.applymap("{0:,.2f}₺".format) # format
+tablo_ms = tablo_ms.apply(lambda x: x.map("{:,.2f}₺".format) if x.dtype == "float" else x)
 
-tablo_mt = tablo_mt.applymap("{0:,.2f}₺".format) # format
+tablo_mt = tablo_mt.apply(lambda x: x.map("{:,.2f}₺".format) if x.dtype == "float" else x)
 #st.table(tablo_ms)
 #st.table(tablo_mt)
 
